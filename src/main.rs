@@ -1,3 +1,5 @@
+pub mod lexical_analyzer;
+
 use std::env;
 use std::fs;
 
@@ -12,18 +14,6 @@ pub trait Compiler {
     fn parse(&mut self);
     fn current_token(&self) -> String;
     fn set_current_token(&mut self, tok: String);
-}
-
-//
-// ===================== Lexical Analyzer =====================
-//
-
-/// Trait for a simple lexical analyzer.
-/// Implements a character-by-character analysis.
-pub trait LexicalAnalyzer {
-    fn get_char(&mut self) -> char;
-    fn add_char(&mut self, c: char);
-    fn lookup(&self, s: &str) -> bool;
 }
 
 /// A concrete implementation of the lexical analyzer.
