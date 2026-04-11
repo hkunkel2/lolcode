@@ -1,7 +1,9 @@
 pub mod lexical_analyzer;
+pub mod syntax_analyzer;
 
 use std::env;
 use std::fs;
+use syntax_analyzer::{LolcodeCompiler, Node};
 
 //
 // ===================== Compiler Trait =====================
@@ -16,30 +18,45 @@ pub trait Compiler {
     fn set_current_token(&mut self, tok: String);
 }
 
-/// A concrete implementation of the lexical analyzer.
-pub trait SyntaxAnalyzer {
-    fn parse_lolcode(&mut self);        
-    fn parse_head(&mut self);           
-    fn parse_title(&mut self);         
-    fn parse_comment(&mut self);        
-    fn parse_body(&mut self);           
-    fn parse_paragraph(&mut self);      
-    fn parse_inner_paragraph(&mut self);
-    fn parse_inner_text(&mut self);     
-    fn parse_variable_define(&mut self);
-    fn parse_variable_use(&mut self);   
-    fn parse_bold(&mut self);           
-    fn parse_italics(&mut self);        
-    fn parse_list(&mut self);           
-    fn parse_list_items(&mut self);     
-    fn parse_inner_list(&mut self);     
-    fn parse_link(&mut self);          
-    fn parse_newline(&mut self);        
-    fn parse_text(&mut self);           
-}
-
+//
 // ===================== Main =====================
 //
 
+fn print_tree(nodes: &[Node], depth: usize) {
+    let indent = "  ".repeat(depth);
+    for node in nodes {
+        match node {
+            Node::Str(s)      => println!("{}{}", indent, s),
+            Node::List(items) => {
+                println!("{}[", indent);
+                print_tree(items, depth + 1);
+                println!("{}]", indent);
+            }
+        }
+    }
+}
+
 fn main() {
+    // Usage in VS Code terminal:
+    //   cargo run -- input.lol
+    // where input.lol is in the project root (not src/).
+
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        eprintln!("Usage: {} <input_file>", args[0]);
+        std::process::exit(1);
+    }
+
+    let filename = &args[1];
+    let source = fs::read_to_string(filename).unwrap_or_else(|err| {
+        eprintln!("Error reading file '{}': {}", filename, err);
+        std::process::exit(1);
+    });
+
+    let mut compiler = LolcodeCompiler::new();
+    compiler.compile(&source);
+    compiler.parse();
+
+    println!("Parse successful! '{}' follows the lolcode grammar.", filename);
+    print_tree(&compiler.tree, 0);
 }
