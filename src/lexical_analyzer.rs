@@ -71,7 +71,7 @@ impl LolcodeLexicalAnalyzer {
             item: vec!["item".into()],
             newline: vec!["newline".into()],
             linx: vec!["linx".into()],
-            ihaz: vec!["#ihas".into()],
+            ihaz: vec!["ihaz".into()],
             itiz: vec!["#itiz".into()],
             lemmesee: vec!["#lemmesee".into()],
             var_name: Vec::new(),                                                                                   
