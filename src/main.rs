@@ -1,9 +1,11 @@
 pub mod lexical_analyzer;
 pub mod syntax_analyzer;
+pub mod semantic_analyzer;
 
 use std::env;
 use std::fs;
 use syntax_analyzer::{LolcodeCompiler, Node};
+use semantic_analyzer::{LolcodeSemanticAnalyzer, SemanticAnalyzer};
 
 //
 // ===================== Compiler Trait =====================
@@ -59,4 +61,12 @@ fn main() {
 
     println!("Parse successful! '{}' follows the lolcode grammar.", filename);
     print_tree(&compiler.tree, 0);
+
+    let mut sa = LolcodeSemanticAnalyzer::new();
+    let resolved = sa.analyze(&compiler.tree).unwrap_or_else(|| {
+        std::process::exit(1);
+    });
+
+    println!("Semantic analysis passed. Resolved tree:");
+    print_tree(&resolved, 0);
 }
