@@ -1,11 +1,13 @@
 pub mod lexical_analyzer;
 pub mod syntax_analyzer;
 pub mod semantic_analyzer;
+pub mod html_generator;
 
 use std::env;
 use std::fs;
 use syntax_analyzer::{LolcodeCompiler, Node};
 use semantic_analyzer::{LolcodeSemanticAnalyzer, SemanticAnalyzer};
+use html_generator::HtmlGenerator;
 
 //
 // ===================== Compiler Trait =====================
@@ -67,6 +69,15 @@ fn main() {
         std::process::exit(1);
     });
 
-    println!("Semantic analysis passed. Resolved tree:");
-    print_tree(&resolved, 0);
+    println!("Semantic analysis passed.");
+
+    let html = HtmlGenerator::new().generate(&resolved);
+
+    let out_path = format!("{}.html", filename.trim_end_matches(".lol").trim_end_matches(".LOL"));
+    fs::write(&out_path, &html).unwrap_or_else(|err| {
+        eprintln!("Error writing '{}': {}", out_path, err);
+        std::process::exit(1);
+    });
+
+    println!("Output written to '{}'.", out_path);
 }
