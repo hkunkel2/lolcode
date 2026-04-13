@@ -3,4 +3,9 @@ name = "lolcode"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "lolcompiler"
+path = "src/main.rs"
+
 [dependencies]
+open = "5.3.3"
