@@ -84,7 +84,7 @@ impl LolcodeLexicalAnalyzer {
     /// Check if a character is an allowed.
     fn is_allowed_char(c: char) -> bool {
         c.is_ascii_alphanumeric()
-            || matches!(c, ',' | '.' | '"' | '\'' | ':' | '?' | '!' | '%' | '/' | '\t' | '\n' | ' ')
+            || matches!(c, ',' | '.' | '"' | '\'' | ':' | '?' | '!' | '%' | '/' | '=' | '\t' | '\n' | ' ')
     }
 
     /// VARNAME ::= any single word (A–Z, a–z, no spaces)
