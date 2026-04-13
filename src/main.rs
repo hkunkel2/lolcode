@@ -5,7 +5,7 @@ pub mod html_generator;
 
 use std::env;
 use std::fs;
-use syntax_analyzer::{LolcodeCompiler, Node};
+use syntax_analyzer::{LolcodeCompiler};
 use semantic_analyzer::{LolcodeSemanticAnalyzer, SemanticAnalyzer};
 use html_generator::HtmlGenerator;
 
