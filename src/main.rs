@@ -26,20 +26,6 @@ pub trait Compiler {
 // ===================== Main =====================
 //
 
-fn print_tree(nodes: &[Node], depth: usize) {
-    let indent = "  ".repeat(depth);
-    for node in nodes {
-        match node {
-            Node::Str(s)      => println!("{}{}", indent, s),
-            Node::List(items) => {
-                println!("{}[", indent);
-                print_tree(items, depth + 1);
-                println!("{}]", indent);
-            }
-        }
-    }
-}
-
 fn main() {
     // Usage in VS Code terminal:
     //   cargo run -- input.lol
@@ -67,15 +53,10 @@ fn main() {
     compiler.compile(&source);
     compiler.parse();
 
-    println!("Parse successful! '{}' follows the lolcode grammar.", filename);
-    print_tree(&compiler.tree, 0);
-
     let mut sa = LolcodeSemanticAnalyzer::new();
     let resolved = sa.analyze(&compiler.tree).unwrap_or_else(|| {
         std::process::exit(1);
     });
-
-    println!("Semantic analysis passed.");
 
     let html = HtmlGenerator::new().generate(&resolved);
 
@@ -84,8 +65,6 @@ fn main() {
         eprintln!("Error writing '{}': {}", out_path, err);
         std::process::exit(1);
     });
-
-    println!("Output written to '{}'.", out_path);
 
     open::that(&out_path).unwrap();
 }
