@@ -119,7 +119,7 @@ impl LolcodeSemanticAnalyzer {
         }
 
         eprintln!(
-            "Semantic error: variable '{}' used before it was defined.",
+            "Semantic error: undfined variable '{}'",
             name,
         );
         None
