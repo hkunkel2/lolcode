@@ -52,6 +52,12 @@ fn main() {
     }
 
     let filename = &args[1];
+
+    if !filename.to_ascii_lowercase().ends_with(".lol") {
+        eprintln!("Error: input file must have a .lol extension.");
+        std::process::exit(1);
+    }
+
     let source = fs::read_to_string(filename).unwrap_or_else(|err| {
         eprintln!("Error reading file '{}': {}", filename, err);
         std::process::exit(1);
