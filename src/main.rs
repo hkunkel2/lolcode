@@ -80,4 +80,6 @@ fn main() {
     });
 
     println!("Output written to '{}'.", out_path);
+
+    open::that(&out_path).unwrap();
 }
