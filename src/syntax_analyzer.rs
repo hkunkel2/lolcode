@@ -33,9 +33,13 @@ pub trait SyntaxAnalyzer {
 
 /// ===================== Syntax Analyzer =====================
 pub struct LolcodeCompiler {
+    /// lexer goes char by char and tokenizes input, also validations tokens and chars are allowed
     lexer: LolcodeLexicalAnalyzer,
+    /// current token being pasered 
     current_tok: String,
+    /// syntax tree that gets generated is the output of syntax analyzer
     pub tree: Vec<Node>,
+    /// used to close open tags
     stack: Vec<Vec<Node>>,
     /// Holds a pre-consumed dispatch token (#maek / #gimmeh) so it lands
     /// as the first string inside the sub-list that owns it.
@@ -43,6 +47,7 @@ pub struct LolcodeCompiler {
 }
 
 impl LolcodeCompiler {
+    /// constructor for syntax analyzer
     pub fn new() -> Self {
         Self {
             lexer: LolcodeLexicalAnalyzer::new(""),
@@ -53,6 +58,7 @@ impl LolcodeCompiler {
         }
     }
 
+    /// new scope block is created push close tag to stack
     fn open_list(&mut self) {
         self.stack.push(Vec::new());
         // If a dispatch token (#maek / #gimmeh) was saved, make it the first
@@ -61,13 +67,13 @@ impl LolcodeCompiler {
             self.add_str(tok);
         }
     }
-
+    /// adds string to syntax tree
     fn add_str(&mut self, s: String) {
         if let Some(top) = self.stack.last_mut() {
             top.push(Node::Str(s));
         }
     }
-
+    /// close scope block 
     fn close_list(&mut self) {
         if let Some(finished) = self.stack.pop() {
             let node = Node::List(finished);
@@ -79,13 +85,20 @@ impl LolcodeCompiler {
         }
     }
 
+    /// sets first current token  
     fn start(&mut self) {
+        //gets possible token
         let candidate = self.lexer.tokens.pop().unwrap_or_default();
+        //checks if token is valid
         if self.lexer.lookup(&candidate) {
+            // sets current token
             self.current_tok = candidate;
+
+        // errors if token is not allowed
         } else if !candidate.is_empty() {
             eprintln!("Lexical error: '{}' is not a recognized token.", candidate);
             std::process::exit(1);
+        // errors if token does not exist
         } else {
             eprintln!("Error: the provided source is empty.");
             std::process::exit(1);
@@ -145,34 +158,43 @@ impl LolcodeCompiler {
 
 /// ===================== Compiler Trait Impl =====================
 impl Compiler for LolcodeCompiler {
+
+    /// constructor - sets lexer starts tokenizing input and first sets current token
     fn compile(&mut self, source: &str) {
         self.lexer = LolcodeLexicalAnalyzer::new(source);
         self.lexer.tokenize();
         self.start();
     }
 
+    /// gets next token
     fn next_token(&mut self) -> String {
+        // gets potential token
         let candidate = self.lexer.tokens.pop().unwrap_or_default();
+        // looks up candidate token
         if self.lexer.lookup(&candidate) {
+            // if token set current token and return it
             self.current_tok = candidate.clone();
             candidate
         } else if candidate.is_empty() {
+            // if empty clears token and returns empty string
             self.current_tok.clear();
             String::new()
         } else {
+            // if neither retirn error since token is not valid
             eprintln!("Lexical error: '{}' is not a recognized token.", candidate);
             std::process::exit(1);
         }
     }
 
+    /// parse input
     fn parse(&mut self) {
         self.parse_lolcode();
     }
-
+    /// gets current token
     fn current_token(&self) -> String {
         self.current_tok.clone()
     }
-
+    /// sets current token
     fn set_current_token(&mut self, tok: String) {
         self.current_tok = tok;
     }
@@ -181,7 +203,7 @@ impl Compiler for LolcodeCompiler {
 //
 // ===================== SyntaxAnalyzer Trait Impl =====================
 //
-
+/// parses lolcode input defines and validtions structure of lolcode.
 impl SyntaxAnalyzer for LolcodeCompiler {
 
     /// <lolcode> ::= HAI <comments> <head> <body> KBYE
