@@ -1,0 +1,808 @@
+VS code terminal truncates so the only thing left of this convo was printing new tree, 
+then it was too complex when I was look at the code so I reverted the changes.  
+Pretty much wanted to test out building out the parse tree for the html generator,
+something like a hashmap of tags and content so generating the html would have be super easy but
+felt it compliced things too much in the semantic analyzer
+      
+      
+      179 +    /// List shape: [#lemmesee, name, #oic]                                                                                       
+      180      fn handle_use(&mut self, items: &[Node]) -> Option<String> {
+      181          let name = match items.get(1) {
+      182              Some(Node::Str(s)) => s.clone(),
+      183              _ => return Some(String::new()),
+      184          };
+      114 -                                                                                                                                  
+      185          for scope in self.scopes.iter().rev() {
+      186              if let Some(value) = scope.get(&name) {
+      187                  return Some(value.clone());
+      188              }
+      189          }
+      120 -                                                                                                                                  
+      121 -        eprintln!(                                                                                                                
+      122 -            "Semantic error: variable '{}' used before it was defined.",                                                          
+      123 -            name,                                                                                                                 
+      124 -        );                                                                                                                        
+      190 +        eprintln!("Semantic error: variable '{}' used before it was defined.", name);                                             
+      191          None
+      192      }
+      193  }
+     ...
+      195  // ===================== Trait Impl =====================
+      196  
+      197  impl SemanticAnalyzer for LolcodeSemanticAnalyzer {
+      132 -    fn analyze(&mut self, tree: &[Node]) -> Option<Vec<Node>> {                                                                   
+      133 -        self.resolve_nodes(tree)                                                                                                  
+      198 +    fn analyze(&mut self, tree: &[Node]) -> Option<Vec<AstNode>> {                                                                
+      199 +        // unwrap the single outer program list before walking                                                                    
+      200 +        let program = match tree {                                                                                                
+      201 +            [Node::List(items)] => items.as_slice(),                                                                              
+      202 +            other => other,                                                                                                       
+      203 +        };                                                                                                                        
+      204 +        self.resolve_nodes_to_ast(program)                                                                                        
+      205      }
+      206  }
+
+⏺ Write(src/html_generator.rs)
+  ⎿  Added 33 lines, removed 113 lines
+      1 -use crate::syntax_analyzer::Node;                                                                                                   
+      1 +use crate::semantic_analyzer::AstNode;                                                                                              
+      2  
+      3  // ===================== HtmlGenerator =====================
+      4  
+     ...
+        9          Self
+       10      }
+       11  
+       12 -    /// Generates the html file based on the resolved syntax tree.                                                                
+       13 -    pub fn generate(&self, tree: &[Node]) -> String {                                                                             
+       14 -        let mut tokens = Vec::new();                                                                                              
+       15 -        self.tree_to_tokens(tree, &mut tokens);                                                                                   
+       16 -        self.tokens_to_html(&tokens)                                                                                              
+       17 -    }                                                                                                                             
+       12 +    /// Generates an HTML string from the resolved AST.                                                                           
+       13 +    pub fn generate(&self, nodes: &[AstNode]) -> String {                                                                         
+       14 +        let mut out = String::new();                                                                                              
+       15 +        out.push_str("<!DOCTYPE html>\n<html>\n");                                                                                
+       16  
+       19 -    /// Recursively walks the Node tree and collects all string tokens into a flat list.                                          
+       20 -    fn tree_to_tokens(&self, nodes: &[Node], out: &mut Vec<String>) {                                                             
+       17 +        // head nodes first                                                                                                       
+       18          for node in nodes {
+       22 -            match node {                                                                                                          
+       23 -                Node::Str(s)      => out.push(s.clone()),                                                                         
+       24 -                Node::List(items) => self.tree_to_tokens(items, out),                                                             
+       19 +            if let AstNode::Head(_) = node {                                                                                      
+       20 +                out.push_str(&self.emit_node(node));                                                                              
+       21              }
+       22          }
+       27 -    }                                                                                                                             
+       23  
+       29 -    /// Walks the token list linearly, using a closing-tag stack to produce HTML.                                                 
+       30 -    fn tokens_to_html(&self, tokens: &[String]) -> String {                                                                       
+       31 -        let mut out = String::new();                                                                                              
+       32 -        out.push_str("<!DOCTYPE html>\n<html>\n");                                                                                
+       33 -                                                                                                                                  
+       34 -        let mut i = 0;                                                                                                            
+       35 -        let mut stack: Vec<String> = Vec::new();                                                                                  
+       36 -        let mut body_open = false;                                                                                                
+       37 -                                                                                                                                  
+       38 -        while i < tokens.len() {                                                                                                  
+       39 -            let lc = tokens[i].to_ascii_lowercase();                                                                              
+       40 -                                                                                                                                  
+       41 -            match lc.as_str() {                                                                                                   
+       42 -                // program delimiters — no HTML output                                                                            
+       43 -                "#hai" | "#kbye" => {}                                                                                            
+       44 -                                                                                                                                  
+       45 -                // comment block — skip all tokens until #tldr                                                                    
+       46 -                "#obtw" => {                                                                                                      
+       47 -                    i += 1;                                                                                                       
+       48 -                    while i < tokens.len() && tokens[i].to_ascii_lowercase() != "#tldr" {                                         
+       49 -                        i += 1;                                                                                                   
+       50 -                    }                                                                                                             
+       51 -                    // i now points at #tldr; outer i += 1 steps past it                                                          
+       52 -                }                                                                                                                 
+       53 -                                                                                                                                  
+       54 -                "#tldr" => {} // end-of-comment marker, consumed by #obtw loop above                                              
+       55 -                                                                                                                                  
+       56 -                // close the current block by popping the stack                                                                   
+       57 -                "#mkay" | "#oic" => {                                                                                             
+       58 -                    if let Some(closing) = stack.pop() {                                                                          
+       59 -                        out.push_str(&closing);                                                                                   
+       60 -                        // after </head>, open <body>                                                                             
+       61 -                        if closing.starts_with("</head>") && !body_open {                                                         
+       62 -                            out.push_str("<body>\n");                                                                             
+       63 -                            body_open = true;                                                                                     
+       64 -                        }                                                                                                         
+       65 -                    }                                                                                                             
+       66 -                }                                                                                                                 
+       67 -                                                                                                                                  
+       68 -                // #maek <keyword> ... #mkay                                                                                      
+       69 -                "#maek" => {                                                                                                      
+       70 -                    i += 1;                                                                                                       
+       71 -                    if i < tokens.len() {                                                                                         
+       72 -                        match tokens[i].to_ascii_lowercase().as_str() {                                                           
+       73 -                            "head" => {                                                                                           
+       74 -                                out.push_str("<head>");                                                                           
+       75 -                                stack.push("</head>\n".to_string());                                                              
+       76 -                            }                                                                                                     
+       77 -                            "paragraf" => {                                                                                       
+       78 -                                if !body_open { out.push_str("<body>\n"); body_open = true; }                                     
+       79 -                                out.push_str("<p>");                                                                              
+       80 -                                stack.push("</p>\n".to_string());                                                                 
+       81 -                            }                                                                                                     
+       82 -                            "list" => {                                                                                           
+       83 -                                if !body_open { out.push_str("<body>\n"); body_open = true; }                                     
+       84 -                                out.push_str("<ul>\n");                                                                           
+       85 -                                stack.push("</ul>\n".to_string());                                                                
+       86 -                            }                                                                                                     
+       87 -                            _ => { stack.push(String::new()); }                                                                   
+       88 -                        }                                                                                                         
+       89 -                    }                                                                                                             
+       90 -                }                                                                                                                 
+       91 -                                                                                                                                  
+       92 -                // #gimmeh <keyword> ... #oic                                                                                     
+       93 -                "#gimmeh" => {                                                                                                    
+       94 -                    i += 1;                                                                                                       
+       95 -                    if i < tokens.len() {                                                                                         
+       96 -                        match tokens[i].to_ascii_lowercase().as_str() {                                                           
+       97 -                            "title"   => { out.push_str("<title>");  stack.push("</title>".to_string()); }                        
+       98 -                            "item"    => { out.push_str("<li>");     stack.push("</li>\n".to_string()); }                         
+       99 -                            "bold"    => { out.push_str("<b>");      stack.push("</b>".to_string()); }                            
+      100 -                            "italics" => { out.push_str("<i>");      stack.push("</i>".to_string()); }                            
+      101 -                            "newline" => {                                                                                        
+      102 -                                out.push_str("<br>\n");                                                                           
+      103 -                                stack.push(String::new()); // #oic pops this harmlessly                                           
+      104 -                            }                                                                                                     
+      105 -                            "linx" => {                                                                                           
+      106 -                                i += 1; // URL token                                                                              
+      107 -                                let url = if i < tokens.len() { tokens[i].as_str() } else { "" };                                 
+      108 -                                out.push_str(&format!("<a href=\"{}\">{}</a>", url, url));                                        
+      109 -                                i += 1; // consume the #oic — no stack push needed                                                
+      110 -                            }                                                                                                     
+      111 -                            _ => { stack.push(String::new()); }                                                                   
+      112 -                        }                                                                                                         
+      113 -                    }                                                                                                             
+      114 -                }                                                                                                                 
+      115 -                                                                                                                                  
+      116 -                // plain text token                                                                                               
+      117 -                _ => {                                                                                                            
+      118 -                    out.push_str(&tokens[i]);                                                                                     
+      119 -                    out.push(' ');                                                                                                
+      120 -                }                                                                                                                 
+       24 +        // body nodes                                                                                                             
+       25 +        out.push_str("<body>\n");                                                                                                 
+       26 +        for node in nodes {                                                                                                       
+       27 +            if !matches!(node, AstNode::Head(_)) {                                                                                
+       28 +                out.push_str(&self.emit_node(node));                                                                              
+       29              }
+      122 -                                                                                                                                  
+      123 -            i += 1;                                                                                                               
+       30          }
+       31  
+      126 -        if body_open {                                                                                                            
+      127 -            out.push_str("</body>\n");                                                                                            
+      128 -        } else {                                                                                                                  
+      129 -            out.push_str("<body>\n</body>\n");                                                                                    
+      130 -        }                                                                                                                         
+      131 -        out.push_str("</html>\n");                                                                                                
+       32 +        out.push_str("</body>\n</html>\n");                                                                                       
+       33          out
+       34      }
+       35 +                                                                                                                                  
+       36 +    fn emit_nodes(&self, nodes: &[AstNode]) -> String {                                                                           
+       37 +        nodes.iter().map(|n| self.emit_node(n)).collect()                                                                         
+       38 +    }                                                                                                                             
+       39 +                                                                                                                                  
+       40 +    fn emit_node(&self, node: &AstNode) -> String {                                                                               
+       41 +        match node {                                                                                                              
+       42 +            AstNode::Head(children)          => format!("<head>{}</head>\n", self.emit_nodes(children)),                          
+       43 +            AstNode::Title(text)             => format!("<title>{}</title>", text),                                               
+       44 +            AstNode::Paragraph(children)     => format!("<p>{}</p>\n", self.emit_nodes(children)),                                
+       45 +            AstNode::UnorderedList(children) => format!("<ul>\n{}</ul>\n", self.emit_nodes(children)),                            
+       46 +            AstNode::ListItem(children)      => format!("<li>{}</li>\n", self.emit_nodes(children)),                              
+       47 +            AstNode::Bold(children)          => format!("<b>{}</b>", self.emit_nodes(children)),                                  
+       48 +            AstNode::Italics(children)       => format!("<i>{}</i>", self.emit_nodes(children)),                                  
+       49 +            AstNode::Link(url)               => format!("<a href=\"{}\">{}</a>", url, url),                                       
+       50 +            AstNode::Newline                 => "<br>\n".to_string(),                                                             
+       51 +            AstNode::Text(s)                 => format!("{} ", s),                                                                
+       52 +        }                                                                                                                         
+       53 +    }                                                                                                                             
+       54  }
+
+⏺ Now update main.rs to match the new return type:
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ Update(src/main.rs)
+  ⎿  Added 1 line, removed 1 line
+       6  use std::env;
+       7  use std::fs;
+       8  use syntax_analyzer::{LolcodeCompiler, Node};
+       9 -use semantic_analyzer::{LolcodeSemanticAnalyzer, SemanticAnalyzer};                                                                
+       9 +use semantic_analyzer::{LolcodeSemanticAnalyzer, SemanticAnalyzer, AstNode};                                                       
+      10  use html_generator::HtmlGenerator;
+      11  
+      12  //
+
+⏺ Bash(cd "/Users/harrisonkunkel/Desktop/towson/Programming Lang/Project_1/lolcode" && cargo build 2>&1)
+  ⎿     Compiling lolcode v0.1.0 (/Users/harrisonkunkel/Desktop/towson/Programming Lang/Project_1/lolcode)
+     warning: unused import: `AstNode`
+      --> src/main.rs:9:68
+     … +8 lines (ctrl+o to expand)
+
+⏺ Update(src/main.rs)
+  ⎿  Added 1 line, removed 1 line
+       6  use std::env;
+       7  use std::fs;
+       8  use syntax_analyzer::{LolcodeCompiler, Node};
+       9 -use semantic_analyzer::{LolcodeSemanticAnalyzer, SemanticAnalyzer, AstNode};                                                       
+       9 +use semantic_analyzer::{LolcodeSemanticAnalyzer, SemanticAnalyzer};                                                                
+      10  use html_generator::HtmlGenerator;
+      11  
+      12  //
+
+⏺ Bash(cd "/Users/harrisonkunkel/Desktop/towson/Programming Lang/Project_1/lolcode" && cargo run --quiet -- tests/Test6.lol 2>&1 && echo "---" &&
+      cat tests/Test6.html)
+  ⎿  Parse successful! 'tests/Test6.lol' follows the lolcode grammar.
+     [
+       #HAI
+     … +77 lines (ctrl+o to expand)
+
+⏺ Compiles clean, output is correct. The architecture is now:
+
+  - Parser → raw Node tree (CST, unchanged)
+  - Semantic analyzer → typed AstNode tree (AST) — variables resolved, structure understood
+  - HTML generator → pure match on AstNode, no token parsing
+
+  The html_generator.rs went from ~170 lines down to ~40. The only minor cosmetic difference from the reference is the space sits inside inline tags
+   (<b>life </b> vs <b>life</b>) — renders identically in a browser.
+
+✻ Sautéed for 4m 28s
+
+❯ can we print the semantic analyzer out put I want to see what it looks like                                                                       
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ Update(src/main.rs)
+  ⎿  Added 1 line, removed 1 line
+       6  use std::env;
+       7  use std::fs;
+       8  use syntax_analyzer::{LolcodeCompiler, Node};
+       9 -use semantic_analyzer::{LolcodeSemanticAnalyzer, SemanticAnalyzer};                                                                
+       9 +use semantic_analyzer::{LolcodeSemanticAnalyzer, SemanticAnalyzer, AstNode};                                                       
+      10  use html_generator::HtmlGenerator;
+      11  
+      12  //
+
+⏺ Update(src/main.rs)
+  ⎿  Added 18 lines
+      40      }
+      41  }
+      42  
+      43 +fn print_ast(nodes: &[AstNode], depth: usize) {                                                                                    
+      44 +    let indent = "  ".repeat(depth);                                                                                               
+      45 +    for node in nodes {                                                                                                            
+      46 +        match node {                                                                                                               
+      47 +            AstNode::Text(s)             => println!("{}Text({})", indent, s),                                                     
+      48 +            AstNode::Title(s)            => println!("{}Title({})", indent, s),                                                    
+      49 +            AstNode::Link(url)           => println!("{}Link({})", indent, url),                                                   
+      50 +            AstNode::Newline             => println!("{}Newline", indent),                                                         
+      51 +            AstNode::Head(children)      => { println!("{}Head", indent);      print_ast(children, depth + 1); }                   
+      52 +            AstNode::Paragraph(children) => { println!("{}Paragraph", indent); print_ast(children, depth + 1); }                   
+      53 +            AstNode::UnorderedList(c)    => { println!("{}List", indent);       print_ast(c, depth + 1); }                         
+      54 +            AstNode::ListItem(children)  => { println!("{}Item", indent);      print_ast(children, depth + 1); }                   
+      55 +            AstNode::Bold(children)      => { println!("{}Bold", indent);      print_ast(children, depth + 1); }                   
+      56 +            AstNode::Italics(children)   => { println!("{}Italics", indent);   print_ast(children, depth + 1); }                   
+      57 +        }                                                                                                                          
+      58 +    }                                                                                                                              
+      59 +}                                                                                                                                  
+      60 +                                                                                                                                   
+      61  fn main() {
+      62      // Usage in VS Code terminal:
+      63      //   cargo run -- input.lol
+
+⏺ Update(src/main.rs)
+  ⎿  Added 1 line
+      88      });
+      89  
+      90      println!("Semantic analysis passed.");
+      91 +    print_ast(&resolved, 0);                                                                                                       
+      92  
+      93      let html = HtmlGenerator::new().generate(&resolved);
+      94  
+
+⏺ Bash(cd "/Users/harrisonkunkel/Desktop/towson/Programming Lang/Project_1/lolcode" && cargo run --quiet -- tests/Test6.lol 2>&1)
+  ⎿  Parse successful! 'tests/Test6.lol' follows the lolcode grammar.
+     [
+       #HAI
+     … +86 lines (ctrl+o to expand)
+
+⏺ There it is. You can see exactly what the semantic analyzer produces:
+
+  - #IHAZ/#LEMMESEE are gone — the variable answer was resolved to 42 and shows up as Text(42)
+  - #OBTW comment is gone
+  - #HAI/#KBYE are gone
+  - Everything has a meaningful type: Head, Paragraph, Italics, Bold, Text
+
+✻ Brewed for 31s
+
+❯ I dont like this its too much I think we should jsut revert, but it does make sense, but like do it the old way \                                 
+  \                                                                                                                                                 
+  Also there is an issue with not generating the comments html has comments way are we not generating them                                          
+
+⏺ Two things: revert the AST back to Vec<Node>, and add HTML comment output for #OBTW/#TLDR blocks.
+
+⏺ Write(src/semantic_analyzer.rs)
+  ⎿  Added 44 lines, removed 116 lines
+       1  use std::collections::HashMap;
+       2  use crate::syntax_analyzer::Node;
+       3  
+       4 -// ===================== AstNode =====================                                                                             
+       5 -                                                                                                                                   
+       6 -#[derive(Debug)]                                                                                                                   
+       7 -pub enum AstNode {                                                                                                                 
+       8 -    Head(Vec<AstNode>),           // <head>                                                                                        
+       9 -    Title(String),                // <title>text</title>                                                                           
+      10 -    Paragraph(Vec<AstNode>),      // <p>                                                                                           
+      11 -    UnorderedList(Vec<AstNode>),  // <ul>                                                                                          
+      12 -    ListItem(Vec<AstNode>),       // <li>                                                                                          
+      13 -    Bold(Vec<AstNode>),           // <b>                                                                                           
+      14 -    Italics(Vec<AstNode>),        // <i>                                                                                           
+      15 -    Link(String),                 // <a href="url">url</a>                                                                         
+      16 -    Newline,                      // <br>                                                                                          
+      17 -    Text(String),                 // plain text                                                                                    
+      18 -}                                                                                                                                  
+      19 -                                                                                                                                   
+       4  // ===================== SemanticAnalyzer Trait =====================
+       5  
+       6  pub trait SemanticAnalyzer {
+      23 -    /// Walk the parse tree, resolve variables, and return an AST.                                                                 
+      24 -    /// Returns None if a semantic error is found.                                                                                 
+      25 -    fn analyze(&mut self, tree: &[Node]) -> Option<Vec<AstNode>>;                                                                  
+       7 +    /// Walk the parse tree, resolve all variable uses to their values, and                                                        
+       8 +    /// return the transformed tree.  Returns None if a semantic error is found.                                                   
+       9 +    fn analyze(&mut self, tree: &[Node]) -> Option<Vec<Node>>;                                                                     
+      10  }
+      11  
+      12  // ===================== Struct =====================
+      13  
+      14  pub struct LolcodeSemanticAnalyzer {
+      15      /// Stack of scopes — innermost scope is last.
+      16 +    /// Each scope maps variable name → value.                                                                                     
+      17      scopes: Vec<HashMap<String, String>>,
+      18  }
+      19  
+     ...
+      21  
+      22  impl LolcodeSemanticAnalyzer {
+      23      pub fn new() -> Self {
+      39 -        Self { scopes: vec![HashMap::new()] }                                                                                      
+      24 +        Self {                                                                                                                     
+      25 +            scopes: vec![HashMap::new()], // global scope                                                                          
+      26 +        }                                                                                                                          
+      27      }
+      28  
+      42 -    /// Walk a slice of Nodes and produce AstNodes.                                                                                
+      43 -    /// #-prefixed structural tokens in Str nodes are skipped.                                                                     
+      44 -    /// Non-# Str tokens become Text nodes.                                                                                        
+      45 -    fn resolve_nodes_to_ast(&mut self, nodes: &[Node]) -> Option<Vec<AstNode>> {                                                   
+      29 +    /// Walk a slice of nodes, returning the resolved version.                                                                     
+      30 +    /// #ihaz nodes are consumed (they define variables, produce no output).                                                       
+      31 +    /// #lemmesee nodes are replaced by the variable's value string.                                                               
+      32 +    /// All other nodes are rebuilt recursively.                                                                                   
+      33 +    fn resolve_nodes(&mut self, nodes: &[Node]) -> Option<Vec<Node>> {                                                             
+      34          let mut out = Vec::new();
+      35          for node in nodes {
+      36              match node {
+      49 -                Node::Str(s) => {                                                                                                  
+      50 -                    if !s.starts_with('#') {                                                                                       
+      51 -                        out.push(AstNode::Text(s.clone()));                                                                        
+      52 -                    }                                                                                                              
+      53 -                }                                                                                                                  
+      37 +                Node::Str(s) => out.push(Node::Str(s.clone())),                                                                    
+      38                  Node::List(items) => {
+      55 -                    match self.resolve_list_to_ast(items)? {                                                                       
+      56 -                        Some(ast_node) => out.push(ast_node),                                                                      
+      57 -                        None => {} // consumed (comment, variable definition)                                                      
+      39 +                    match self.resolve_list(items)? {                                                                              
+      40 +                        Some(resolved) => out.push(resolved),                                                                      
+      41 +                        None => {} // #ihaz — consumed, produces no output node                                                    
+      42                      }
+      43                  }
+      44              }
+     ...
+       46          Some(out)
+       47      }
+       48  
+       65 -    /// Resolve one List node to an AstNode.                                                                                      
+       49 +    /// Resolve one list node.                                                                                                    
+       50      /// Returns:
+       67 -    ///   None             — semantic error (propagates up)                                                                       
+       68 -    ///   Some(None)       — node consumed (comment, #ihaz), nothing added                                                        
+       69 -    ///   Some(Some(node)) — replacement AstNode                                                                                  
+       70 -    fn resolve_list_to_ast(&mut self, items: &[Node]) -> Option<Option<AstNode>> {                                                
+       51 +    ///   None            — semantic error (propagates up)                                                                        
+       52 +    ///   Some(None)      — node was consumed (#ihaz), nothing added to parent                                                    
+       53 +    ///   Some(Some(node))— replacement node to add to parent                                                                     
+       54 +    fn resolve_list(&mut self, items: &[Node]) -> Option<Option<Node>> {                                                          
+       55          let mut strs = items.iter().filter_map(|n| {
+       56              if let Node::Str(s) = n { Some(s.to_ascii_lowercase()) } else { None }
+       57          });
+       58          let first  = strs.next().unwrap_or_default();
+       59          let second = strs.next().unwrap_or_default();
+       60  
+       77 -        // content slice: skip leading [keyword, type] and trailing [#mkay/#oic]                                                  
+       78 -        let n = items.len().saturating_sub(1);                                                                                    
+       79 -        let content = if items.len() >= 3 { &items[2..n] } else { &items[0..0] };                                                 
+       80 -                                                                                                                                  
+       61          match (first.as_str(), second.as_str()) {
+       82 -            // variable definition — register and consume                                                                         
+       62 +            // --- variable definition: register, produce no output node ---                                                      
+       63              ("#ihaz", _) => {
+       64                  self.handle_define(items)?;
+       85 -                Some(None)                                                                                                        
+       65 +                Some(None) // consumed                                                                                            
+       66              }
+       67  
+       88 -            // variable use — replace with stored value                                                                           
+       68 +            // --- variable use: replace with the stored value ---                                                                
+       69              ("#lemmesee", _) => {
+       70                  let value = self.handle_use(items)?;
+       91 -                Some(Some(AstNode::Text(value)))                                                                                  
+       71 +                Some(Some(Node::Str(value)))                                                                                      
+       72              }
+       73  
+       94 -            // comments — skip                                                                                                    
+       95 -            ("#obtw", _) => Some(None),                                                                                           
+       96 -                                                                                                                                  
+       97 -            // head block                                                                                                         
+       98 -            ("#maek", "head") => {                                                                                                
+       99 -                let children = self.resolve_nodes_to_ast(content)?;                                                               
+      100 -                Some(Some(AstNode::Head(children)))                                                                               
+      101 -            }                                                                                                                     
+      102 -                                                                                                                                  
+      103 -            // paragraph block — new scope                                                                                        
+      104 -            ("#maek", "paragraf") => {                                                                                            
+       74 +            // --- paragraf / list blocks: new scope, recurse, rebuild ---                                                        
+       75 +            ("#maek", "paragraf") | ("#maek", "list") => {                                                                        
+       76                  self.scopes.push(HashMap::new());
+      106 -                let children = self.resolve_nodes_to_ast(content)?;                                                               
+       77 +                let resolved_items = self.resolve_nodes(items)?;                                                                  
+       78                  self.scopes.pop();
+      108 -                Some(Some(AstNode::Paragraph(children)))                                                                          
+       79 +                Some(Some(Node::List(resolved_items)))                                                                            
+       80              }
+       81  
+      111 -            // unordered list block — new scope                                                                                   
+      112 -            ("#maek", "list") => {                                                                                                
+      113 -                self.scopes.push(HashMap::new());                                                                                 
+      114 -                let children = self.resolve_nodes_to_ast(content)?;                                                               
+      115 -                self.scopes.pop();                                                                                                
+      116 -                Some(Some(AstNode::UnorderedList(children)))                                                                      
+       82 +            // --- everything else: recurse in same scope, rebuild ---                                                            
+       83 +            _ => {                                                                                                                
+       84 +                let resolved_items = self.resolve_nodes(items)?;                                                                  
+       85 +                Some(Some(Node::List(resolved_items)))                                                                            
+       86              }
+      118 -                                                                                                                                  
+      119 -            // title — join text tokens into one string                                                                           
+      120 -            ("#gimmeh", "title") => {                                                                                             
+      121 -                let text = content.iter()                                                                                         
+      122 -                    .filter_map(|node| if let Node::Str(s) = node { Some(s.as_str()) } else { None })                             
+      123 -                    .collect::<Vec<_>>()                                                                                          
+      124 -                    .join(" ");                                                                                                   
+      125 -                Some(Some(AstNode::Title(text)))                                                                                  
+      126 -            }                                                                                                                     
+      127 -                                                                                                                                  
+      128 -            // list item                                                                                                          
+      129 -            ("#gimmeh", "item") => {                                                                                              
+      130 -                let children = self.resolve_nodes_to_ast(content)?;                                                               
+      131 -                Some(Some(AstNode::ListItem(children)))                                                                           
+      132 -            }                                                                                                                     
+      133 -                                                                                                                                  
+      134 -            // bold                                                                                                               
+      135 -            ("#gimmeh", "bold") => {                                                                                              
+      136 -                let children = self.resolve_nodes_to_ast(content)?;                                                               
+      137 -                Some(Some(AstNode::Bold(children)))                                                                               
+      138 -            }                                                                                                                     
+      139 -                                                                                                                                  
+      140 -            // italics                                                                                                            
+      141 -            ("#gimmeh", "italics") => {                                                                                           
+      142 -                let children = self.resolve_nodes_to_ast(content)?;                                                               
+      143 -                Some(Some(AstNode::Italics(children)))                                                                            
+      144 -            }                                                                                                                     
+      145 -                                                                                                                                  
+      146 -            // link — third token is the URL                                                                                      
+      147 -            ("#gimmeh", "linx") => {                                                                                              
+      148 -                let url = match items.get(2) {                                                                                    
+      149 -                    Some(Node::Str(s)) => s.clone(),                                                                              
+      150 -                    _ => String::new(),                                                                                           
+      151 -                };                                                                                                                
+      152 -                Some(Some(AstNode::Link(url)))                                                                                    
+      153 -            }                                                                                                                     
+      154 -                                                                                                                                  
+      155 -            // newline                                                                                                            
+      156 -            ("#gimmeh", "newline") => Some(Some(AstNode::Newline)),                                                               
+      157 -                                                                                                                                  
+      158 -            // unknown — skip                                                                                                     
+      159 -            _ => Some(None),                                                                                                      
+       87          }
+       88      }
+       89  
+       90      /// Register a variable in the current (innermost) scope.
+      164 -    /// List shape: [#ihaz, name, #itiz, value, #mkay]                                                                            
+       91 +    /// List shape: [Str("#ihaz"), Str(name), Str("#itiz"), Str(value), Str("#mkay")]                                             
+       92      fn handle_define(&mut self, items: &[Node]) -> Option<()> {
+       93          let name = match items.get(1) {
+       94              Some(Node::Str(s)) => s.clone(),
+     ...
+      103      }
+      104  
+      105      /// Look up a variable through the scope stack (innermost first).
+      179 -    /// List shape: [#lemmesee, name, #oic]                                                                                       
+      106 +    /// Returns the value on success, None (with error printed) on failure.                                                       
+      107 +    /// List shape: [Str("#lemmesee"), Str(name), Str("#oic")]                                                                    
+      108      fn handle_use(&mut self, items: &[Node]) -> Option<String> {
+      109          let name = match items.get(1) {
+      110              Some(Node::Str(s)) => s.clone(),
+      111              _ => return Some(String::new()),
+      112          };
+      113 +                                                                                                                                  
+      114          for scope in self.scopes.iter().rev() {
+      115              if let Some(value) = scope.get(&name) {
+      116                  return Some(value.clone());
+      117              }
+      118          }
+      190 -        eprintln!("Semantic error: variable '{}' used before it was defined.", name);                                             
+      119 +                                                                                                                                  
+      120 +        eprintln!(                                                                                                                
+      121 +            "Semantic error: variable '{}' used before it was defined.",                                                          
+      122 +            name,                                                                                                                 
+      123 +        );                                                                                                                        
+      124          None
+      125      }
+      126  }
+     ...
+      128  // ===================== Trait Impl =====================
+      129  
+      130  impl SemanticAnalyzer for LolcodeSemanticAnalyzer {
+      198 -    fn analyze(&mut self, tree: &[Node]) -> Option<Vec<AstNode>> {                                                                
+      199 -        // unwrap the single outer program list before walking                                                                    
+      200 -        let program = match tree {                                                                                                
+      201 -            [Node::List(items)] => items.as_slice(),                                                                              
+      202 -            other => other,                                                                                                       
+      203 -        };                                                                                                                        
+      204 -        self.resolve_nodes_to_ast(program)                                                                                        
+      131 +    fn analyze(&mut self, tree: &[Node]) -> Option<Vec<Node>> {                                                                   
+      132 +        self.resolve_nodes(tree)                                                                                                  
+      133      }
+      134  }
+
+⏺ Now restore the html generator with comment support added:
+
+⏺ Write(src/html_generator.rs)
+  ⎿  Added 116 lines, removed 33 lines
+      1 -use crate::semantic_analyzer::AstNode;                                                                                              
+      1 +use crate::syntax_analyzer::Node;                                                                                                   
+      2  
+      3  // ===================== HtmlGenerator =====================
+      4  
+     ...
+        9          Self
+       10      }
+       11  
+       12 -    /// Generates an HTML string from the resolved AST.                                                                           
+       13 -    pub fn generate(&self, nodes: &[AstNode]) -> String {                                                                         
+       14 -        let mut out = String::new();                                                                                              
+       15 -        out.push_str("<!DOCTYPE html>\n<html>\n");                                                                                
+       12 +    /// Generates an HTML string from the resolved syntax tree.                                                                   
+       13 +    pub fn generate(&self, tree: &[Node]) -> String {                                                                             
+       14 +        let mut tokens = Vec::new();                                                                                              
+       15 +        self.tree_to_tokens(tree, &mut tokens);                                                                                   
+       16 +        self.tokens_to_html(&tokens)                                                                                              
+       17 +    }                                                                                                                             
+       18  
+       17 -        // head nodes first                                                                                                       
+       19 +    /// Recursively walks the Node tree and collects all string tokens into a flat list.                                          
+       20 +    fn tree_to_tokens(&self, nodes: &[Node], out: &mut Vec<String>) {                                                             
+       21          for node in nodes {
+       19 -            if let AstNode::Head(_) = node {                                                                                      
+       20 -                out.push_str(&self.emit_node(node));                                                                              
+       22 +            match node {                                                                                                          
+       23 +                Node::Str(s)      => out.push(s.clone()),                                                                         
+       24 +                Node::List(items) => self.tree_to_tokens(items, out),                                                             
+       25              }
+       26          }
+       27 +    }                                                                                                                             
+       28  
+       24 -        // body nodes                                                                                                             
+       25 -        out.push_str("<body>\n");                                                                                                 
+       26 -        for node in nodes {                                                                                                       
+       27 -            if !matches!(node, AstNode::Head(_)) {                                                                                
+       28 -                out.push_str(&self.emit_node(node));                                                                              
+       29 +    /// Walks the token list linearly, using a closing-tag stack to produce HTML.                                                 
+       30 +    fn tokens_to_html(&self, tokens: &[String]) -> String {                                                                       
+       31 +        let mut out = String::new();                                                                                              
+       32 +        out.push_str("<!DOCTYPE html>\n<html>\n");                                                                                
+       33 +                                                                                                                                  
+       34 +        let mut i = 0;                                                                                                            
+       35 +        let mut stack: Vec<String> = Vec::new();                                                                                  
+       36 +        let mut body_open = false;                                                                                                
+       37 +                                                                                                                                  
+       38 +        while i < tokens.len() {                                                                                                  
+       39 +            let lc = tokens[i].to_ascii_lowercase();                                                                              
+       40 +                                                                                                                                  
+       41 +            match lc.as_str() {                                                                                                   
+       42 +                // program delimiters — no HTML output                                                                            
+       43 +                "#hai" | "#kbye" => {}                                                                                            
+       44 +                                                                                                                                  
+       45 +                // comment block — collect text and emit as HTML comment                                                          
+       46 +                "#obtw" => {                                                                                                      
+       47 +                    i += 1;                                                                                                       
+       48 +                    let mut comment_words = Vec::new();                                                                           
+       49 +                    while i < tokens.len() && tokens[i].to_ascii_lowercase() != "#tldr" {                                         
+       50 +                        comment_words.push(tokens[i].as_str());                                                                   
+       51 +                        i += 1;                                                                                                   
+       52 +                    }                                                                                                             
+       53 +                    out.push_str(&format!("<!-- {} -->\n", comment_words.join(" ")));                                             
+       54 +                    // i now points at #tldr; outer i += 1 steps past it                                                          
+       55 +                }                                                                                                                 
+       56 +                                                                                                                                  
+       57 +                "#tldr" => {} // end-of-comment marker, consumed by #obtw loop above                                              
+       58 +                                                                                                                                  
+       59 +                // close the current block by popping the stack                                                                   
+       60 +                "#mkay" | "#oic" => {                                                                                             
+       61 +                    if let Some(closing) = stack.pop() {                                                                          
+       62 +                        out.push_str(&closing);                                                                                   
+       63 +                        // after </head>, open <body>                                                                             
+       64 +                        if closing.starts_with("</head>") && !body_open {                                                         
+       65 +                            out.push_str("<body>\n");                                                                             
+       66 +                            body_open = true;                                                                                     
+       67 +                        }                                                                                                         
+       68 +                    }                                                                                                             
+       69 +                }                                                                                                                 
+       70 +                                                                                                                                  
+       71 +                // #maek <keyword> ... #mkay                                                                                      
+       72 +                "#maek" => {                                                                                                      
+       73 +                    i += 1;                                                                                                       
+       74 +                    if i < tokens.len() {                                                                                         
+       75 +                        match tokens[i].to_ascii_lowercase().as_str() {                                                           
+       76 +                            "head" => {                                                                                           
+       77 +                                out.push_str("<head>");                                                                           
+       78 +                                stack.push("</head>\n".to_string());                                                              
+       79 +                            }                                                                                                     
+       80 +                            "paragraf" => {                                                                                       
+       81 +                                if !body_open { out.push_str("<body>\n"); body_open = true; }                                     
+       82 +                                out.push_str("<p>");                                                                              
+       83 +                                stack.push("</p>\n".to_string());                                                                 
+       84 +                            }                                                                                                     
+       85 +                            "list" => {                                                                                           
+       86 +                                if !body_open { out.push_str("<body>\n"); body_open = true; }                                     
+       87 +                                out.push_str("<ul>\n");                                                                           
+       88 +                                stack.push("</ul>\n".to_string());                                                                
+       89 +                            }                                                                                                     
+       90 +                            _ => { stack.push(String::new()); }                                                                   
+       91 +                        }                                                                                                         
+       92 +                    }                                                                                                             
+       93 +                }                                                                                                                 
+       94 +                                                                                                                                  
+       95 +                // #gimmeh <keyword> ... #oic                                                                                     
+       96 +                "#gimmeh" => {                                                                                                    
+       97 +                    i += 1;                                                                                                       
+       98 +                    if i < tokens.len() {                                                                                         
+       99 +                        match tokens[i].to_ascii_lowercase().as_str() {                                                           
+      100 +                            "title"   => { out.push_str("<title>");  stack.push("</title>".to_string()); }                        
+      101 +                            "item"    => { out.push_str("<li>");     stack.push("</li>\n".to_string()); }                         
+      102 +                            "bold"    => { out.push_str("<b>");      stack.push("</b>".to_string()); }                            
+      103 +                            "italics" => { out.push_str("<i>");      stack.push("</i>".to_string()); }                            
+      104 +                            "newline" => {                                                                                        
+      105 +                                out.push_str("<br>\n");                                                                           
+      106 +                                stack.push(String::new()); // #oic pops this harmlessly                                           
+      107 +                            }                                                                                                     
+      108 +                            "linx" => {                                                                                           
+      109 +                                i += 1; // URL token                                                                              
+      110 +                                let url = if i < tokens.len() { tokens[i].as_str() } else { "" };                                 
+      111 +                                out.push_str(&format!("<a href=\"{}\">{}</a>", url, url));                                        
+      112 +                                i += 1; // consume the #oic — no stack push needed                                                
+      113 +                            }                                                                                                     
+      114 +                            _ => { stack.push(String::new()); }                                                                   
+      115 +                        }                                                                                                         
+      116 +                    }                                                                                                             
+      117 +                }                                                                                                                 
+      118 +                                                                                                                                  
+      119 +                // plain text token                                                                                               
+      120 +                _ => {                                                                                                            
+      121 +                    out.push_str(&tokens[i]);                                                                                     
+      122 +                    out.push(' ');                                                                                                
+      123 +                }                                                                                                                 
+      124              }
+      125 +                                                                                                                                  
+      126 +            i += 1;                                                                                                               
+      127          }
+      128  
+       32 -        out.push_str("</body>\n</html>\n");                                                                                       
+      129 +        if body_open {                                                                                                            
+      130 +            out.push_str("</body>\n");                                                                                            
+      131 +        } else {                                                                                                                  
+      132 +            out.push_str("<body>\n</body>\n");                                                                                    
+      133 +        }                                                                                                                         
+      134 +        out.push_str("</html>\n");                                                                                                
+      135          out
+      136      }
+       35 -                                                                                                                                  
+       36 -    fn emit_nodes(&self, nodes: &[AstNode]) -> String {                                                                           
+       37 -        nodes.iter().map(|n| self.emit_node(n)).collect()                                                                         
+       38 -    }                                                                                                                             
+       39 -                                                                                                                                  
+       40 -    fn emit_node(&self, node: &AstNode) -> String {                                                                               
+       41 -        match node {                                                                                                              
+       42 -            AstNode::Head(children)          => format!("<head>{}</head>\n", self.emit_nodes(children)),                          
+       43 -            AstNode::Title(text)             => format!("<title>{}</title>", text),                                               
+       44 -            AstNode::Paragraph(children)     => format!("<p>{}</p>\n", self.emit_nodes(children)),                                
+       45 -            AstNode::UnorderedList(children) => format!("<ul>\n{}</ul>\n", self.emit_nodes(children)),                            
+       46 -            AstNode::ListItem(children)      => format!("<li>{}</li>\n", self.emit_nodes(children)),                              
+       47 -            AstNode::Bold(children)          => format!("<b>{}</b>", self.emit_nodes(children)),                                  
+       48 -            AstNode::Italics(children)       => format!("<i>{}</i>", self.emit_nodes(children)),                                  
+       49 -            AstNode::Link(url)               => format!("<a href=\"{}\">{}</a>", url, url),                                       
+       50 -            AstNode::Newline                 => "<br>\n".to_string(),                                                             
+       51 -            AstNode::Text(s)                 => format!("{} ", s),                                                                
+       52 -        }                                                                                                                         
+       53 -    }                                                                                                                             
+      137  }
+
+⏺ Now fix main.rs — remove print_ast and the AstNode import:
+
+⏺ Write(src/main.rs)
+  ⎿  Added 1 line, removed 20 lines
+       6  use std::env;
+       7  use std::fs;
+       8  use syntax_analyzer::{LolcodeCompiler, Node};
+       9 -use semantic_analyzer::{LolcodeSemanticAnalyzer, SemanticAnalyzer, AstNode};                                                       
+       9 +use semantic_analyzer::{LolcodeSemanticAnalyzer, SemanticAnalyzer};                                                                
+      10  use html_generator::HtmlGenerator;
+      11  
+      12  //
+     ...
+      40      }
+      41  }
+      42  
+      43 -fn print_ast(nodes: &[AstNode], depth: usize) {                                                                                    
+      44 -    let indent = "  ".repeat(depth);                                                                                               
+      45 -    for node in nodes {                                                                                                            
+      46 -        match node {                                                                                                               
+      47 -            AstNode::Text(s)             => println!("{}Text({})", indent, s),                                                     
+      48 -            AstNode::Title(s)            => println!("{}Title({})", indent, s),                                                    
+      49 -            AstNode::Link(url)           => println!("{}Link({})", indent, url),                                                   
+      50 -            AstNode::Newline             => println!("{}Newline", indent),                                                         
+      51 -            AstNode::Head(children)      => { println!("{}Head", indent);      print_ast(children, depth + 1); }                   
+      52 -            AstNode::Paragraph(children) => { println!("{}Paragraph", indent); print_ast(children, depth + 1); }                   
+      53 -            AstNode::UnorderedList(c)    => { println!("{}List", indent);       print_ast(c, depth + 1); }                         
+      54 -            AstNode::ListItem(children)  => { println!("{}Item", indent);      print_ast(children, depth + 1); }                   
+      55 -            AstNode::Bold(children)      => { println!("{}Bold", indent);      print_ast(children, depth + 1); }                   
+      56 -            AstNode::Italics(children)   => { println!("{}Italics", indent);   print_ast(children, depth + 1); }                   
+      57 -        }                                                                                                                          
+      58 -    }                                                                                                                              
+      59 -}                                                                                                                                  
+      60 -                                                                                                                                   
+      43  fn main() {
+      44      // Usage in VS Code terminal:
+      45      //   cargo run -- input.lol
+     ...
+      70      });
+      71  
+      72      println!("Semantic analysis passed.");
+      91 -    print_ast(&resolved, 0);                                                                                                       
+      73  
+      74      let html = HtmlGenerator::new().generate(&resolved);
+      75  
+
+⏺ Bash(cd "/Users/harrisonkunkel/Desktop/towson/Programming Lang/Project_1/lolcode" && cargo run --quiet -- tests/Test6.lol 2>&1 && echo "---" &&
+      cat tests/Test6.html)
+  ⎿  Parse successful! 'tests/Test6.lol' follows the lolcode grammar.
+     [
+       #HAI
+     … +78 lines (ctrl+o to expand)
+
+⏺ Back to the simple approach, and comments now generate <!-- ... -->. The comment from the #OBTW/#TLDR block shows up right before the head tag.
+
+✻ Churned for 2m 21s

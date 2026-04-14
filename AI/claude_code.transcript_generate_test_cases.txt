@@ -1,0 +1,850 @@
+Had claude create more test cases based on given scenarios, vs code terminal seems to have glitched and repeats output...
+
+❯ I need you to create more test files \                                             
+  there should be a test for \                                                       
+  invalid token\                                                                     
+  one for each tag \                                                                 
+  one where scope is tested so var is tested in different blocks\                    
+  test that head must before body\                                                   
+  comments can be before head \                                                      
+  title can only be in head \                                                        
+  invalid tokens error \                                                             
+  Invalid tags error \                                                               
+  words like head can be in text with failing \                                      
+  and anyother ones that will cover test scenarios that should be covered            
+
+⏺ Let me explore the project structure first to understand what's there.
+
+⏺ Explore(Explore lolcode project structure)
+  ⎿  Done (29 tool uses · 39.7k tokens · 57s)
+  (ctrl+o to expand)
+
+⏺ Now let me read the existing test files and run_tests.sh to understand the exact
+  format needed.
+
+  Read 8 files (ctrl+o to expand)
+
+⏺ Now let me read the source files to understand exactly what tokens are valid and
+  what errors are raised.
+
+  Read 2 files (ctrl+o to expand)
+
+⏺ Now let me read the semantic analyzer to understand scope behavior:
+
+  Read 2 files (ctrl+o to expand)
+
+⏺ Now I have everything I need. Let me create all the test files:
+
+⏺ Write(tests/Test11.lol)
+  ⎿  Wrote 12 lines to tests/Test11.lol
+       1 #HAI
+       2 #OBTW This test case covers the list, item, and newline tags. #TLDR
+       3 #MAEK HEAD
+       4        #GIMMEH TITLE Test 11 #OIC
+       5 #MKAY
+       6 #GIMMEH NEWLINE
+       7 #MAEK LIST
+       8        #GIMMEH ITEM First item. #OIC
+       9        #GIMMEH ITEM Second item. #OIC
+      10        #GIMMEH ITEM #GIMMEH BOLD Important entry #OIC #OIC
+     … +2 lines (ctrl+o to expand)
+
+
+
+⏺ Write(tests/Test12.lol)
+  ⎿  Wrote 9 lines to tests/Test12.lol
+      1 #HAI
+      2 #OBTW This test case assesses that multiple comments can appear before head. #TLDR
+      3 #OBTW Second comment before head. #TLDR
+      4 #OBTW Third comment before head. #TLDR
+      5 #MAEK HEAD
+      6         #GIMMEH TITLE Test 12 #OIC
+      7 #MKAY
+      8 This is test case 12. Multiple comments appeared before head.
+      9 #KBYE
+
+
+
+
+
+
+⏺ Write(tests/Test13.lol)
+  ⎿  Wrote 11 lines to tests/Test13.lol
+       1 #HAI
+       2 #OBTW This test case assesses that keywords like head and bold can appear as plain text. #TLDR
+       3 #MAEK HEAD
+       4        #GIMMEH TITLE Test 13 #OIC
+       5 #MKAY
+       6 The head of the document is the title section.
+       7 #MAEK PARAGRAF
+       8        Use bold for emphasis and italics for style.
+       9        A list can contain item after item with a newline between each.
+      10 #MKAY
+     … +1 line (ctrl+o to expand)
+
+
+
+
+
+
+⏺ Write(tests/Test14.lol)
+  ⎿  Wrote 7 lines to tests/Test14.lol
+      1 #HAI
+      2 #OBTW This test case assesses that the compiler detects an invalid token character. #TLDR
+      3 #MAEK HEAD
+      4         #GIMMEH TITLE Test 14 #OIC
+      5 #MKAY
+      6 This line contains a $invalid token.
+      7 #KBYE
+
+
+
+⏺ Write(tests/Test15.lol)
+  ⎿  Wrote 9 lines to tests/Test15.lol
+      1 #HAI
+      2 #OBTW This test case assesses that the compiler rejects an invalid tag. #TLDR
+      3 #MAEK HEAD
+      4         #GIMMEH TITLE Test 15 #OIC
+      5 #MKAY
+      6 #GIMMEH TABLE
+      7         Some content here.
+      8 #MKAY
+      9 #KBYE
+
+
+
+⏺ Write(tests/Test16.lol)
+  ⎿  Wrote 9 lines to tests/Test16.lol
+      1 #HAI
+      2 #OBTW This test case assesses that head must appear before body content. #TLDR
+      3 #MAEK PARAGRAF
+      4         Content that appears before the head block.
+      5 #MKAY
+      6 #MAEK HEAD
+      7         #GIMMEH TITLE Test 16 #OIC
+      8 #MKAY
+      9 #KBYE
+
+
+
+
+⏺ Write(tests/Test17.lol)
+  ⎿  Wrote 7 lines to tests/Test17.lol
+      1 #HAI
+      2 #OBTW This test case assesses that title can only appear inside head. #TLDR
+      3 #MAEK HEAD
+      4         #GIMMEH TITLE Test 17 #OIC
+      5 #MKAY
+      6 #GIMMEH TITLE This title is outside head. #OIC
+      7 #KBYE
+
+
+
+
+⏺ Write(tests/Test18.lol)
+  ⎿  Wrote 11 lines to tests/Test18.lol
+       1 #HAI
+       2 #OBTW This test case assesses that variables defined in an inner scope are not accessible in the outer scope. #TLDR
+       3 #MAEK HEAD
+       4        #GIMMEH TITLE Test 18 #OIC
+       5 #MKAY
+       6 #MAEK PARAGRAF
+       7        #IHAZ secret #ITIZ hidden #MKAY
+       8        The secret is #LEMMESEE secret #OIC
+       9 #MKAY
+      10 Now reveal the secret outside the block: #LEMMESEE secret #OIC
+     … +1 line (ctrl+o to expand)
+
+
+
+
+
+
+⏺ Write(tests/Test19.lol)
+  ⎿  Wrote 6 lines to tests/Test19.lol
+      1 #HAI
+      2 #OBTW This test case assesses that a missing end keyword is detected. #TLDR
+      3 #MAEK HEAD
+      4         #GIMMEH TITLE Test 19 #OIC
+      5 #MKAY
+      6 This document is never properly closed.
+
+
+
+⏺ Write(tests/Test20.lol)
+  ⎿  Wrote 8 lines to tests/Test20.lol
+      1 #HAI
+      2 #OBTW This test case assesses that a missing closing block keyword is detected. #TLDR
+      3 #MAEK HEAD
+      4         #GIMMEH TITLE Test 20 #OIC
+      5 #MKAY
+      6 #MAEK PARAGRAF
+      7         This paragraph block is never closed with mkay.
+      8 #KBYE
+
+⏺ Now update run_tests.sh to include all the new tests:
+
+⏺ Update(run_tests.sh)
+  ⎿  File not found
+
+  Searched for 1 pattern, listed 3 directories (ctrl+o to expand)
+
+⏺ Bash(git -C "/Users/harrisonkunkel/Desktop/towson/Programming Lang/Project_1/lolcode" status)
+  ⎿  Interrupted · What should Claude do instead?
+
+❯ /model                                                                                                                                            
+  ⎿  Set model to Sonnet 4.6
+
+● How is Claude doing this session? (optional)
+  1: Bad    2: Fine   3: Good   0: Dismiss
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle)
+╭─── Claude Code v2.1.101 ──────────────────────────────────────────────────────────╮
+│                                                    │ Tips for getting started     │
+│               Welcome back Harrison!               │ Run /init to create a CLAUD… │
+│                                                    │ ──────────────────────────── │
+│                       ▐▛███▜▌                      │ Recent activity              │
+│                      ▝▜█████▛▘                     │ 2d ago  Task 2. Implement a… │
+│                        ▘▘ ▝▝                       │ 2d ago  Okay review this, d… │
+│    Sonnet 4.6 · Claude Max ·                       │ 2w ago  explain this code t… │
+│    harrisonjameskunkel@gmail.com's Organization    │ /resume for more             │
+│    ~/…/towson/Programming Lang/Project_1/lolcode   │                              │
+╰───────────────────────────────────────────────────────────────────────────────────╯
+
+❯ /clear                                                                             
+  ⎿  (no content)
+
+❯ I need you to create more test files \                                             
+  there should be a test for \                                                       
+  invalid token\                                                                     
+  one for each tag \                                                                 
+  one where scope is tested so var is tested in different blocks\                    
+  test that head must before body\                                                   
+  comments can be before head \                                                      
+  title can only be in head \                                                        
+  invalid tokens error \                                                             
+  Invalid tags error \                                                               
+  words like head can be in text with failing \                                      
+  and anyother ones that will cover test scenarios that should be covered            
+
+⏺ Let me explore the project structure first to understand what's there.
+
+⏺ Explore(Explore lolcode project structure)
+  ⎿  Done (29 tool uses · 39.7k tokens · 57s)
+  (ctrl+o to expand)
+
+⏺ Now let me read the existing test files and run_tests.sh to understand the exact
+  format needed.
+
+  Read 8 files (ctrl+o to expand)
+
+⏺ Now let me read the source files to understand exactly what tokens are valid and
+  what errors are raised.
+
+  Read 2 files (ctrl+o to expand)
+
+⏺ Now let me read the semantic analyzer to understand scope behavior:
+
+  Read 2 files (ctrl+o to expand)
+
+⏺ Now I have everything I need. Let me create all the test files:
+
+⏺ Write(tests/Test11.lol)
+  ⎿  Wrote 12 lines to tests/Test11.lol
+       1 #HAI
+       2 #OBTW This test case covers the list, item, and newline tags. #TLDR
+       3 #MAEK HEAD
+       4        #GIMMEH TITLE Test 11 #OIC
+       5 #MKAY
+       6 #GIMMEH NEWLINE
+       7 #MAEK LIST
+       8        #GIMMEH ITEM First item. #OIC
+       9        #GIMMEH ITEM Second item. #OIC
+      10        #GIMMEH ITEM #GIMMEH BOLD Important entry #OIC #OIC
+     … +2 lines (ctrl+o to expand)
+
+
+
+⏺ Write(tests/Test12.lol)
+  ⎿  Wrote 9 lines to tests/Test12.lol
+      1 #HAI
+      2 #OBTW This test case assesses that multiple comments can appear before head. #TLDR
+      3 #OBTW Second comment before head. #TLDR
+      4 #OBTW Third comment before head. #TLDR
+      5 #MAEK HEAD
+      6         #GIMMEH TITLE Test 12 #OIC
+      7 #MKAY
+      8 This is test case 12. Multiple comments appeared before head.
+      9 #KBYE
+
+
+
+
+
+
+⏺ Write(tests/Test13.lol)
+  ⎿  Wrote 11 lines to tests/Test13.lol
+       1 #HAI
+       2 #OBTW This test case assesses that keywords like head and bold can appear as plain text. #TLDR
+       3 #MAEK HEAD
+       4        #GIMMEH TITLE Test 13 #OIC
+       5 #MKAY
+       6 The head of the document is the title section.
+       7 #MAEK PARAGRAF
+       8        Use bold for emphasis and italics for style.
+       9        A list can contain item after item with a newline between each.
+      10 #MKAY
+     … +1 line (ctrl+o to expand)
+
+
+
+
+
+
+⏺ Write(tests/Test14.lol)
+  ⎿  Wrote 7 lines to tests/Test14.lol
+      1 #HAI
+      2 #OBTW This test case assesses that the compiler detects an invalid token character. #TLDR
+      3 #MAEK HEAD
+      4         #GIMMEH TITLE Test 14 #OIC
+      5 #MKAY
+      6 This line contains a $invalid token.
+      7 #KBYE
+
+
+
+⏺ Write(tests/Test15.lol)
+  ⎿  Wrote 9 lines to tests/Test15.lol
+      1 #HAI
+      2 #OBTW This test case assesses that the compiler rejects an invalid tag. #TLDR
+      3 #MAEK HEAD
+      4         #GIMMEH TITLE Test 15 #OIC
+      5 #MKAY
+      6 #GIMMEH TABLE
+      7         Some content here.
+      8 #MKAY
+      9 #KBYE
+
+
+
+⏺ Write(tests/Test16.lol)
+  ⎿  Wrote 9 lines to tests/Test16.lol
+      1 #HAI
+      2 #OBTW This test case assesses that head must appear before body content. #TLDR
+      3 #MAEK PARAGRAF
+      4         Content that appears before the head block.
+      5 #MKAY
+      6 #MAEK HEAD
+      7         #GIMMEH TITLE Test 16 #OIC
+      8 #MKAY
+      9 #KBYE
+
+
+
+
+⏺ Write(tests/Test17.lol)
+  ⎿  Wrote 7 lines to tests/Test17.lol
+      1 #HAI
+      2 #OBTW This test case assesses that title can only appear inside head. #TLDR
+      3 #MAEK HEAD
+      4         #GIMMEH TITLE Test 17 #OIC
+      5 #MKAY
+      6 #GIMMEH TITLE This title is outside head. #OIC
+      7 #KBYE
+
+
+
+
+⏺ Write(tests/Test18.lol)
+  ⎿  Wrote 11 lines to tests/Test18.lol
+       1 #HAI
+       2 #OBTW This test case assesses that variables defined in an inner scope are not accessible in the outer scope. #TLDR
+       3 #MAEK HEAD
+       4        #GIMMEH TITLE Test 18 #OIC
+       5 #MKAY
+       6 #MAEK PARAGRAF
+       7        #IHAZ secret #ITIZ hidden #MKAY
+       8        The secret is #LEMMESEE secret #OIC
+       9 #MKAY
+      10 Now reveal the secret outside the block: #LEMMESEE secret #OIC
+     … +1 line (ctrl+o to expand)
+
+
+
+
+
+
+⏺ Write(tests/Test19.lol)
+  ⎿  Wrote 6 lines to tests/Test19.lol
+      1 #HAI
+      2 #OBTW This test case assesses that a missing end keyword is detected. #TLDR
+      3 #MAEK HEAD
+      4         #GIMMEH TITLE Test 19 #OIC
+      5 #MKAY
+      6 This document is never properly closed.
+
+
+
+⏺ Write(tests/Test20.lol)
+  ⎿  Wrote 8 lines to tests/Test20.lol
+      1 #HAI
+      2 #OBTW This test case assesses that a missing closing block keyword is detected. #TLDR
+      3 #MAEK HEAD
+      4         #GIMMEH TITLE Test 20 #OIC
+      5 #MKAY
+      6 #MAEK PARAGRAF
+      7         This paragraph block is never closed with mkay.
+      8 #KBYE
+
+⏺ Now update run_tests.sh to include all the new tests:
+
+⏺ Update(run_tests.sh)
+  ⎿  File not found
+
+  Searched for 1 pattern, listed 3 directories (ctrl+o to expand)
+
+⏺ Bash(git -C "/Users/harrisonkunkel/Desktop/towson/Programming Lang/Project_1/lolcode" status)
+  ⎿  Interrupted · What should Claude do instead?
+
+❯ /model                                                                                                                                            
+  ⎿  Set model to Sonnet 4.6
+
+● How is Claude doing this session? (optional)
+  1: Bad    2: Fine   3: Good   0: Dismiss
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯  
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle)
+╭─── Claude Code v2.1.101 ──────────────────────────────────────────────────────────╮
+│                                                    │ Tips for getting started     │
+│               Welcome back Harrison!               │ Run /init to create a CLAUD… │
+│                                                    │ ──────────────────────────── │
+│                       ▐▛███▜▌                      │ Recent activity              │
+│                      ▝▜█████▛▘                     │ 2d ago  Task 2. Implement a… │
+│                        ▘▘ ▝▝                       │ 2d ago  Okay review this, d… │
+│    Sonnet 4.6 · Claude Max ·                       │ 2w ago  explain this code t… │
+│    harrisonjameskunkel@gmail.com's Organization    │ /resume for more             │
+│    ~/…/towson/Programming Lang/Project_1/lolcode   │                              │
+╰───────────────────────────────────────────────────────────────────────────────────╯
+
+❯ /clear                                                                             
+  ⎿  (no content)
+
+❯ I need you to create more test files \                                             
+  there should be a test for \                                                       
+  invalid token\                                                                     
+  one for each tag \                                                                 
+  one where scope is tested so var is tested in different blocks\                    
+  test that head must before body\                                                   
+  comments can be before head \                                                      
+  title can only be in head \                                                        
+  invalid tokens error \                                                             
+  Invalid tags error \                                                               
+  words like head can be in text with failing \                                      
+  and anyother ones that will cover test scenarios that should be covered            
+
+⏺ Let me explore the project structure first to understand what's there.
+
+⏺ Explore(Explore lolcode project structure)
+  ⎿  Done (29 tool uses · 39.7k tokens · 57s)
+  (ctrl+o to expand)
+
+⏺ Now let me read the existing test files and run_tests.sh to understand the exact
+  format needed.
+
+  Read 8 files (ctrl+o to expand)
+
+⏺ Now let me read the source files to understand exactly what tokens are valid and
+  what errors are raised.
+
+  Read 2 files (ctrl+o to expand)
+
+⏺ Now let me read the semantic analyzer to understand scope behavior:
+
+  Read 2 files (ctrl+o to expand)
+
+⏺ Now I have everything I need. Let me create all the test files:
+
+⏺ Write(tests/Test11.lol)
+  ⎿  Wrote 12 lines to tests/Test11.lol
+       1 #HAI
+       2 #OBTW This test case covers the list, item, and newline tags. #TLDR
+       3 #MAEK HEAD
+       4        #GIMMEH TITLE Test 11 #OIC
+       5 #MKAY
+       6 #GIMMEH NEWLINE
+       7 #MAEK LIST
+       8        #GIMMEH ITEM First item. #OIC
+       9        #GIMMEH ITEM Second item. #OIC
+      10        #GIMMEH ITEM #GIMMEH BOLD Important entry #OIC #OIC
+     … +2 lines (ctrl+o to expand)
+
+
+
+⏺ Write(tests/Test12.lol)
+  ⎿  Wrote 9 lines to tests/Test12.lol
+      1 #HAI
+      2 #OBTW This test case assesses that multiple comments can appear before head. #TLDR
+      3 #OBTW Second comment before head. #TLDR
+      4 #OBTW Third comment before head. #TLDR
+      5 #MAEK HEAD
+      6         #GIMMEH TITLE Test 12 #OIC
+      7 #MKAY
+      8 This is test case 12. Multiple comments appeared before head.
+      9 #KBYE
+
+
+
+
+
+
+⏺ Write(tests/Test13.lol)
+  ⎿  Wrote 11 lines to tests/Test13.lol
+       1 #HAI
+       2 #OBTW This test case assesses that keywords like head and bold can appear as plain text. #TLDR
+       3 #MAEK HEAD
+       4        #GIMMEH TITLE Test 13 #OIC
+       5 #MKAY
+       6 The head of the document is the title section.
+       7 #MAEK PARAGRAF
+       8        Use bold for emphasis and italics for style.
+       9        A list can contain item after item with a newline between each.
+      10 #MKAY
+     … +1 line (ctrl+o to expand)
+
+
+
+
+
+
+⏺ Write(tests/Test14.lol)
+  ⎿  Wrote 7 lines to tests/Test14.lol
+      1 #HAI
+      2 #OBTW This test case assesses that the compiler detects an invalid token character. #TLDR
+      3 #MAEK HEAD
+      4         #GIMMEH TITLE Test 14 #OIC
+      5 #MKAY
+      6 This line contains a $invalid token.
+      7 #KBYE
+
+
+
+⏺ Write(tests/Test15.lol)
+  ⎿  Wrote 9 lines to tests/Test15.lol
+      1 #HAI
+      2 #OBTW This test case assesses that the compiler rejects an invalid tag. #TLDR
+      3 #MAEK HEAD
+      4         #GIMMEH TITLE Test 15 #OIC
+      5 #MKAY
+      6 #GIMMEH TABLE
+      7         Some content here.
+      8 #MKAY
+      9 #KBYE
+
+
+
+⏺ Write(tests/Test16.lol)
+  ⎿  Wrote 9 lines to tests/Test16.lol
+      1 #HAI
+      2 #OBTW This test case assesses that head must appear before body content. #TLDR
+      3 #MAEK PARAGRAF
+      4         Content that appears before the head block.
+      5 #MKAY
+      6 #MAEK HEAD
+      7         #GIMMEH TITLE Test 16 #OIC
+      8 #MKAY
+      9 #KBYE
+
+
+
+
+⏺ Write(tests/Test17.lol)
+  ⎿  Wrote 7 lines to tests/Test17.lol
+      1 #HAI
+      2 #OBTW This test case assesses that title can only appear inside head. #TLDR
+      3 #MAEK HEAD
+      4         #GIMMEH TITLE Test 17 #OIC
+      5 #MKAY
+      6 #GIMMEH TITLE This title is outside head. #OIC
+      7 #KBYE
+
+
+
+
+⏺ Write(tests/Test18.lol)
+  ⎿  Wrote 11 lines to tests/Test18.lol
+       1 #HAI
+       2 #OBTW This test case assesses that variables defined in an inner scope are not accessible in the outer scope. #TLDR
+       3 #MAEK HEAD
+       4        #GIMMEH TITLE Test 18 #OIC
+       5 #MKAY
+       6 #MAEK PARAGRAF
+       7        #IHAZ secret #ITIZ hidden #MKAY
+       8        The secret is #LEMMESEE secret #OIC
+       9 #MKAY
+      10 Now reveal the secret outside the block: #LEMMESEE secret #OIC
+     … +1 line (ctrl+o to expand)
+
+
+
+
+
+
+⏺ Write(tests/Test19.lol)
+  ⎿  Wrote 6 lines to tests/Test19.lol
+      1 #HAI
+      2 #OBTW This test case assesses that a missing end keyword is detected. #TLDR
+      3 #MAEK HEAD
+      4         #GIMMEH TITLE Test 19 #OIC
+      5 #MKAY
+      6 This document is never properly closed.
+
+
+
+⏺ Write(tests/Test20.lol)
+  ⎿  Wrote 8 lines to tests/Test20.lol
+      1 #HAI
+      2 #OBTW This test case assesses that a missing closing block keyword is detected. #TLDR
+      3 #MAEK HEAD
+      4         #GIMMEH TITLE Test 20 #OIC
+      5 #MKAY
+      6 #MAEK PARAGRAF
+      7         This paragraph block is never closed with mkay.
+      8 #KBYE
+
+⏺ Now update run_tests.sh to include all the new tests:
+
+⏺ Update(run_tests.sh)
+  ⎿  File not found
+
+  Searched for 1 pattern, listed 3 directories (ctrl+o to expand)
+
+⏺ Bash(git -C "/Users/harrisonkunkel/Desktop/towson/Programming Lang/Project_1/lolcode" status)
+  ⎿  Interrupted · What should Claude do instead?
+
+❯ /model                                                                                                                                            
+  ⎿  Set model to Sonnet 4.6
+
+● How is Claude doing this session? (optional)
+  1: Bad    2: Fine   3: Good   0: Dismiss
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle)
+╭─── Claude Code v2.1.101 ──────────────────────────────────────────────────────────╮
+│                                                    │ Tips for getting started     │
+│               Welcome back Harrison!               │ Run /init to create a CLAUD… │
+│                                                    │ ──────────────────────────── │
+│                       ▐▛███▜▌                      │ Recent activity              │
+│                      ▝▜█████▛▘                     │ 2d ago  Task 2. Implement a… │
+│                        ▘▘ ▝▝                       │ 2d ago  Okay review this, d… │
+│    Sonnet 4.6 · Claude Max ·                       │ 2w ago  explain this code t… │
+│    harrisonjameskunkel@gmail.com's Organization    │ /resume for more             │
+│    ~/…/towson/Programming Lang/Project_1/lolcode   │                              │
+╰───────────────────────────────────────────────────────────────────────────────────╯
+
+❯ /clear                                                                             
+  ⎿  (no content)
+
+❯ I need you to create more test files \                                             
+  there should be a test for \                                                       
+  invalid token\                                                                     
+  one for each tag \                                                                 
+  one where scope is tested so var is tested in different blocks\                    
+  test that head must before body\                                                   
+  comments can be before head \                                                      
+  title can only be in head \                                                        
+  invalid tokens error \                                                             
+  Invalid tags error \                                                               
+  words like head can be in text with failing \                                      
+  and anyother ones that will cover test scenarios that should be covered            
+
+⏺ Let me explore the project structure first to understand what's there.
+
+⏺ Explore(Explore lolcode project structure)
+  ⎿  Done (29 tool uses · 39.7k tokens · 57s)
+  (ctrl+o to expand)
+
+⏺ Now let me read the existing test files and run_tests.sh to understand the exact
+  format needed.
+
+  Read 8 files (ctrl+o to expand)
+
+⏺ Now let me read the source files to understand exactly what tokens are valid and
+  what errors are raised.
+
+  Read 2 files (ctrl+o to expand)
+
+⏺ Now let me read the semantic analyzer to understand scope behavior:
+
+  Read 2 files (ctrl+o to expand)
+
+⏺ Now I have everything I need. Let me create all the test files:
+
+⏺ Write(tests/Test11.lol)
+  ⎿  Wrote 12 lines to tests/Test11.lol
+       1 #HAI
+       2 #OBTW This test case covers the list, item, and newline tags. #TLDR
+       3 #MAEK HEAD
+       4        #GIMMEH TITLE Test 11 #OIC
+       5 #MKAY
+       6 #GIMMEH NEWLINE
+       7 #MAEK LIST
+       8        #GIMMEH ITEM First item. #OIC
+       9        #GIMMEH ITEM Second item. #OIC
+      10        #GIMMEH ITEM #GIMMEH BOLD Important entry #OIC #OIC
+     … +2 lines (ctrl+o to expand)
+
+
+
+⏺ Write(tests/Test12.lol)
+  ⎿  Wrote 9 lines to tests/Test12.lol
+      1 #HAI
+      2 #OBTW This test case assesses that multiple comments can appear before head. #TLDR
+      3 #OBTW Second comment before head. #TLDR
+      4 #OBTW Third comment before head. #TLDR
+      5 #MAEK HEAD
+      6         #GIMMEH TITLE Test 12 #OIC
+      7 #MKAY
+      8 This is test case 12. Multiple comments appeared before head.
+      9 #KBYE
+
+
+
+
+
+
+⏺ Write(tests/Test13.lol)
+  ⎿  Wrote 11 lines to tests/Test13.lol
+       1 #HAI
+       2 #OBTW This test case assesses that keywords like head and bold can appear as plain text. #TLDR
+       3 #MAEK HEAD
+       4        #GIMMEH TITLE Test 13 #OIC
+       5 #MKAY
+       6 The head of the document is the title section.
+       7 #MAEK PARAGRAF
+       8        Use bold for emphasis and italics for style.
+       9        A list can contain item after item with a newline between each.
+      10 #MKAY
+     … +1 line (ctrl+o to expand)
+
+
+
+
+
+
+⏺ Write(tests/Test14.lol)
+  ⎿  Wrote 7 lines to tests/Test14.lol
+      1 #HAI
+      2 #OBTW This test case assesses that the compiler detects an invalid token character. #TLDR
+      3 #MAEK HEAD
+      4         #GIMMEH TITLE Test 14 #OIC
+      5 #MKAY
+      6 This line contains a $invalid token.
+      7 #KBYE
+
+
+
+⏺ Write(tests/Test15.lol)
+  ⎿  Wrote 9 lines to tests/Test15.lol
+      1 #HAI
+      2 #OBTW This test case assesses that the compiler rejects an invalid tag. #TLDR
+      3 #MAEK HEAD
+      4         #GIMMEH TITLE Test 15 #OIC
+      5 #MKAY
+      6 #GIMMEH TABLE
+      7         Some content here.
+      8 #MKAY
+      9 #KBYE
+
+
+
+⏺ Write(tests/Test16.lol)
+  ⎿  Wrote 9 lines to tests/Test16.lol
+      1 #HAI
+      2 #OBTW This test case assesses that head must appear before body content. #TLDR
+      3 #MAEK PARAGRAF
+      4         Content that appears before the head block.
+      5 #MKAY
+      6 #MAEK HEAD
+      7         #GIMMEH TITLE Test 16 #OIC
+      8 #MKAY
+      9 #KBYE
+
+
+
+
+⏺ Write(tests/Test17.lol)
+  ⎿  Wrote 7 lines to tests/Test17.lol
+      1 #HAI
+      2 #OBTW This test case assesses that title can only appear inside head. #TLDR
+      3 #MAEK HEAD
+      4         #GIMMEH TITLE Test 17 #OIC
+      5 #MKAY
+      6 #GIMMEH TITLE This title is outside head. #OIC
+      7 #KBYE
+
+
+
+
+⏺ Write(tests/Test18.lol)
+  ⎿  Wrote 11 lines to tests/Test18.lol
+       1 #HAI
+       2 #OBTW This test case assesses that variables defined in an inner scope are not accessible in the outer scope. #TLDR
+       3 #MAEK HEAD
+       4        #GIMMEH TITLE Test 18 #OIC
+       5 #MKAY
+       6 #MAEK PARAGRAF
+       7        #IHAZ secret #ITIZ hidden #MKAY
+       8        The secret is #LEMMESEE secret #OIC
+       9 #MKAY
+      10 Now reveal the secret outside the block: #LEMMESEE secret #OIC
+     … +1 line (ctrl+o to expand)
+
+
+
+
+
+
+⏺ Write(tests/Test19.lol)
+  ⎿  Wrote 6 lines to tests/Test19.lol
+      1 #HAI
+      2 #OBTW This test case assesses that a missing end keyword is detected. #TLDR
+      3 #MAEK HEAD
+      4         #GIMMEH TITLE Test 19 #OIC
+      5 #MKAY
+      6 This document is never properly closed.
+
+
+
+⏺ Write(tests/Test20.lol)
+  ⎿  Wrote 8 lines to tests/Test20.lol
+      1 #HAI
+      2 #OBTW This test case assesses that a missing closing block keyword is detected. #TLDR
+      3 #MAEK HEAD
+      4         #GIMMEH TITLE Test 20 #OIC
+      5 #MKAY
+      6 #MAEK PARAGRAF
+      7         This paragraph block is never closed with mkay.
+      8 #KBYE
+
+⏺ Now update run_tests.sh to include all the new tests:
+
+⏺ Update(run_tests.sh)
+  ⎿  File not found
+
+  Searched for 1 pattern, listed 3 directories (ctrl+o to expand)
+
+⏺ Bash(git -C "/Users/harrisonkunkel/Desktop/towson/Programming Lang/Project_1/lolcode" status)
+  ⎿  Interrupted · What should Claude do instead?
+
+❯ /model                                                                                                                                            
+  ⎿  Set model to Sonnet 4.6
+
+● How is Claude doing this session? (optional)
+  1: Bad    2: Fine   3: Good   0: Dismiss

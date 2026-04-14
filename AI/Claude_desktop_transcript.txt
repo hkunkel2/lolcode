@@ -1,0 +1,27 @@
+rust docs the /// what is the best practice when using this, every method? or what should it be everywhere?Apr 11Deliberated best practices for Rust documentation comment usageDeliberated best practices for Rust documentation comment usageIn Rust, /// doc comments generate documentation via rustdoc. Here's the practical guidance:
+Where you should use ///:
+
+All public items: functions, methods, structs, enums, traits, type aliases, constants, and modules. This is the strong community convention and #[warn(missing_docs)] can enforce it.
+Trait methods — both the trait definition and any non-obvious impl.
+
+Where you can skip them:
+
+Private items — nice to have, but not expected.
+Self-explanatory one-liners like fn is_empty(&self) -> bool on a collection (though even these often get a one-liner doc in the standard library).
+Fields of structs, unless their purpose isn't obvious from the name.
+
+Best practices:
+
+First line should be a short summary sentence (this becomes the synopsis in generated docs).
+Use # Examples, # Panics, # Errors, and # Safety sections where relevant.
+Include a runnable example with ```rust blocks — cargo test runs these as doctests, so they double as tests.
+Use //! (inner doc comments) at the top of lib.rs or mod.rs to document the crate/module itself.
+
+The general rule: if it's pub, document it with ///. If it's private, use regular // comments where helpful. Most well-maintained crates enable #![warn(missing_docs)] to catch any public API gaps.how to generateApr 11Formulated concise Rust documentation generation guidanceFormulated concise Rust documentation generation guidancebashcargo doc --open
+That builds the HTML docs and opens them in your browser. Add --no-deps to skip dependency docs and speed it up.in rust what does this do let _ =Apr 11Deciphered incomplete Rust syntax patternDeciphered incomplete Rust syntax patternIt explicitly discards the value. Common uses:
+
+Ignoring a Result: let _ = some_function(); suppresses the #[must_use] warning without handling the error.
+Dropping a lock early isn't one — let _ drops immediately, while let _guard holds until end of scope.
+
+Key distinction: let _ = x drops x immediately, whereas let _name = x holds it until the scope ends. This matters for things like mutex guards or file handles.but something like this let _ = self.next_token();why not self.next_token();Apr 11Identified the distinction between suppressing compiler warningsIdentified the distinction between suppressing compiler warningsThey do the same thing functionally. The only difference is if next_token() returns a type marked #[must_use] (like Result), calling it bare gives a compiler warning. let _ = silences that warning and signals "I'm intentionally ignoring this return value."
+If the return type isn't #[must_use], there's no difference and the bare call is cleaner.
