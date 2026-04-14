@@ -47,7 +47,9 @@ pub struct LolcodeLexicalAnalyzer {
     pub address: Vec<String>,
 }
 
+/// LolcodeLexicalAnalyzer 
 impl LolcodeLexicalAnalyzer {
+    /// creates lexer defines keywords and valid tokens 
     pub fn new(source: &str) -> Self {
         Self {
             input: source.chars().collect(),
@@ -106,7 +108,7 @@ impl LolcodeLexicalAnalyzer {
     pub fn is_address(s: &str) -> bool {
         !s.is_empty() && s.chars().all(|c| Self::is_allowed_char(c) && c != ' ')
     }
-
+    /// steps char by char and on ws creates token
     pub fn tokenize(&mut self) {
         loop {
             let c = self.get_char();
@@ -128,7 +130,10 @@ impl LolcodeLexicalAnalyzer {
     }
 }
 
+
+/// from simple lexer in lab 4 from string it gets char then adds char to token and lookups token against valid tokens 
 impl LexicalAnalyzer for LolcodeLexicalAnalyzer {
+    /// gets char from string input
     fn get_char(&mut self) -> char {
         if self.position < self.input.len() {
             let c = self.input[self.position];
@@ -139,10 +144,12 @@ impl LexicalAnalyzer for LolcodeLexicalAnalyzer {
         }
     }
 
+    /// adds char to token 
     fn add_char(&mut self, c: char) {
         self.current_build.push(c);
     }
 
+    /// checks if token is valid in the lookup table(predefined tokens and chars)
     fn lookup(&self, s: &str) -> bool {
         let lower = s.to_ascii_lowercase();
         self.hai.iter().any(|t| t == &lower)
