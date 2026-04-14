@@ -34,6 +34,7 @@ impl LolcodeSemanticAnalyzer {
         let mut out = Vec::new();
         for node in nodes {
             match node {
+                // pushes if just string since var definitions cant live on root
                 Node::Str(s) => out.push(Node::Str(s.clone())),
                 Node::List(items) => {
                     match self.resolve_list(items)? {
@@ -53,6 +54,8 @@ impl LolcodeSemanticAnalyzer {
     ///   Some(Some(node))— replacement node to add to parent
     fn resolve_list(&mut self, items: &[Node]) -> Option<Option<Node>> {
         // Identify the construct from the first two string tokens.
+        // iter of nodes and filter out non-strings grabs frist 2 because we only care about 
+        // creating a block for scope, setting a var value or resolving a var references
         let mut strs = items.iter().filter_map(|n| {
             if let Node::Str(s) = n { Some(s.to_ascii_lowercase()) } else { None }
         });
@@ -61,29 +64,32 @@ impl LolcodeSemanticAnalyzer {
 
         match (first.as_str(), second.as_str()) {
             // --- variable definition: register, produce no output node ---
+            // 
             ("#ihaz", _) => {
+                // passes current block with items to handle_define which will set the var value for the scope
                 self.handle_define(items)?;
                 Some(None) // consumed
             }
 
             // --- variable use: replace with the stored value ---
             ("#lemmesee", _) => {
+                // // passes current block with items to handle_use which will set the var value for the var reference
                 let value = self.handle_use(items)?;
                 Some(Some(Node::Str(value)))
             }
 
             // --- paragraf / list blocks: new scope, recurse, rebuild ---
             ("#maek", "paragraf") | ("#maek", "list") => {
-                self.scopes.push(HashMap::new());
-                let resolved_items = self.resolve_nodes(items)?;
-                self.scopes.pop();
-                Some(Some(Node::List(resolved_items)))
+                self.scopes.push(HashMap::new()); //creates a new block
+                let resolved_items = self.resolve_nodes(items)?; // recurively calls resolve node for these tags since they create new scope blocks 
+                self.scopes.pop(); // block ends remove local scope 
+                Some(Some(Node::List(resolved_items))) // return resolved items
             }
 
             // --- everything else: recurse in same scope, rebuild ---
             _ => {
-                let resolved_items = self.resolve_nodes(items)?;
-                Some(Some(Node::List(resolved_items)))
+                let resolved_items = self.resolve_nodes(items)?;// move through current scope
+                Some(Some(Node::List(resolved_items))) // returns resolved items
             }
         }
     }
@@ -107,11 +113,12 @@ impl LolcodeSemanticAnalyzer {
     /// Returns the value on success, None (with error printed) on failure.
     /// List shape: [Str("#lemmesee"), Str(name), Str("#oic")]
     fn handle_use(&mut self, items: &[Node]) -> Option<String> {
+        // gets var name
         let name = match items.get(1) {
             Some(Node::Str(s)) => s.clone(),
             _ => return Some(String::new()),
         };
-
+        // sets var value based on scope walks up to global from current scope
         for scope in self.scopes.iter().rev() {
             if let Some(value) = scope.get(&name) {
                 return Some(value.clone());
@@ -119,7 +126,7 @@ impl LolcodeSemanticAnalyzer {
         }
 
         eprintln!(
-            "Semantic error: undfined variable '{}'",
+            "Semantic error: undefined variable '{}'",
             name,
         );
         None
