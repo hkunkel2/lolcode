@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["main"],"mod":["html_generator","lexical_analyzer","semantic_analyzer","syntax_analyzer"],"trait":["Compiler"]};

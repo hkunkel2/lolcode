@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Node"],"struct":["LolcodeCompiler"],"trait":["SyntaxAnalyzer"]};
