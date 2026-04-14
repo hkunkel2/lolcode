@@ -11,3 +11,7 @@ I also had claude generate more test files, based off of given scenarios.
 
 * Note when trying to sumbit transcripts, issue with vscode turncating terminal output and losing coversions and output... 
 Also could be that I use /clear between tasks to keep control of context to claude, habit I have from work
+
+
+Usage: 
+bin/lolcompiler <input_file>
